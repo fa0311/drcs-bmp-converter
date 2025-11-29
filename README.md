@@ -4,5 +4,5 @@
 を収録した 独自 BMP 形式（DRCS-BMP） を RGBA PNG に変換するツールです。
 
 ```bash
-docker run -v $(pwd)/config/drcs:/app/input -v $(pwd)/config/drcspng:/app/output ghcr.io/fa0311/drcs-bmp-converter/drcs-bmp-converter-docker:latest 
+docker run -v $(pwd)/config/drcs:/app/input -v $(pwd)/drcs_output:/app/output ghcr.io/fa0311/drcs-bmp-converter/drcs-bmp-converter-docker:latest 
 ```
