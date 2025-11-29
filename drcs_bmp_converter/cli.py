@@ -1,11 +1,17 @@
-#!/usr/bin/env python3
-import argparse
 import glob
 from pathlib import Path
 
 from PIL import Image
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from drcs_converter import parse_drcs_bmp
+from .drcs_converter import parse_drcs_bmp
+
+
+class ArgParse(BaseSettings):
+    model_config = SettingsConfigDict(cli_parse_args=True)
+    input: str = Field(alias="i")
+    output: str = Field(alias="o")
 
 
 def convert_single_file(input_path: Path, output_path: Path):
@@ -17,18 +23,12 @@ def convert_single_file(input_path: Path, output_path: Path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert DRCS BMP files to PNG")
-    parser.add_argument("input", help="Input file or glob pattern")
-    parser.add_argument("output", help="Output directory or file")
-    args = parser.parse_args()
-    
-    input_files = glob.glob(args.input)
-    
-    input_path_list = [Path(p) for p in input_files]
+    args = ArgParse()
+
+    input_path_list = [Path(p) for p in glob.glob(args.input)]
     output_path = Path(args.output)
-    
+
     for input_file in sorted(input_path_list):
         output_file = output_path / (input_file.stem + ".png")
         convert_single_file(input_file, output_file)
         print(f"[OK] {input_file} -> {output_file}")
-    

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drcs-bmp-converter"
+version = "1.0.0"
+description = "DRCS BMP format converter for Japanese digital broadcasting (ARIB)"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Author"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "numpy>=2.3.5",
+    "Pillow>=12.0.0",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.12.0"
+]
+
+[project.scripts]
+drcs-bmp-converter = "drcs_bmp_converter.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["drcs_bmp_converter*"]

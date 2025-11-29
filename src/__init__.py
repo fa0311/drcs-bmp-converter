@@ -1,1 +1,0 @@
-# DRCS BMP Converter Package
