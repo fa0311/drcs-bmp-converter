@@ -1,0 +1,8 @@
+{
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "[jsonc][json][yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
