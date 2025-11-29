@@ -10,8 +10,16 @@ from .drcs_converter import parse_drcs_bmp
 
 class ArgParse(BaseSettings):
     model_config = SettingsConfigDict(cli_parse_args=True)
-    input: str = Field(alias="i")
-    output: str = Field(alias="o")
+    input: str = Field(
+        alias="input",
+        default="./input/*.bmp",
+        description="Input file path (supports glob patterns)",
+    )
+    output: str = Field(
+        alias="output",
+        default="./output/",
+        description="Output directory",
+    )
 
 
 def convert_single_file(input_path: Path, output_path: Path):
