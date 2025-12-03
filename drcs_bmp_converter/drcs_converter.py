@@ -14,8 +14,8 @@ class Seek:
         self.offset += n
         return chunk
 
-    def read_all(self) -> bytes:
-        return self.read(self.length - self.offset)
+    def exist(self) -> bool:
+        return self.offset < self.length
 
     def read_le_u16(self) -> int:
         b = self.read(2)
@@ -63,27 +63,30 @@ class DrcsHeader:
     # 重要な色数
     clr_important: int
 
-    @staticmethod
-    def expected_drcs_header() -> "DrcsHeader":
-        return DrcsHeader(
-            signature=b"BM",
-            declared_size=55050240,
-            reserved1=0,
-            reserved2=0,
-            declared_data_offset=7864320,
-            padding=b"\x00\x00",
-            header_size=40,
-            width=36,
-            height=36,
-            planes=1,
-            bit_count=4,
-            compression=0,
-            size_image=720,
-            x_pels_per_meter=0,
-            y_pels_per_meter=0,
-            clr_used=0,
-            clr_important=0,
-        )
+    # @staticmethod
+    # def expected_drcs_header() -> "DrcsHeader":
+    #     return DrcsHeader(
+    #         signature=b"BM",
+    #         declared_size=55050240,
+    #         reserved1=0,
+    #         reserved2=0,
+    #         declared_data_offset=7864320,
+    #         padding=b"\x00\x00",
+    #         header_size=40,
+    #         width=36,
+    #         height=36,
+    #         planes=1,
+    #         bit_count=4,
+    #         compression=0,
+    #         size_image=720,
+    #         x_pels_per_meter=0,
+    #         y_pels_per_meter=0,
+    #         clr_used=0,
+    #         clr_important=0,
+    #     )
+
+    def verify(self) -> bool:
+        return self.signature == b"BM"
 
 
 @dataclass
@@ -116,7 +119,7 @@ def parse(seek: Seek) -> tuple[DrcsHeader, DrcsBody]:
     )
     body = DrcsBody(
         palette=seek.read((1 << header.bit_count) * 4),
-        pixel_indices=seek.read_all(),
+        pixel_indices=seek.read(header.size_image),
     )
     return header, body
 
@@ -132,29 +135,25 @@ def build_palette_rgba(header: DrcsHeader, body: DrcsBody) -> np.ndarray:
 
 
 def _decode_indices(header: DrcsHeader, body: DrcsBody) -> np.ndarray:
-    bytes_per_row_raw = (header.width + 1) // 2
-    bytes_per_row_padded = ((bytes_per_row_raw + 3) // 4) * 4
-    rows = np.frombuffer(body.pixel_indices, dtype=np.uint8)
-    expected = header.height * bytes_per_row_padded
-    rows = rows[:expected].reshape((header.height, bytes_per_row_padded))
+    w, h = header.width, header.height
+    bytes_per_row_raw = (w + 1) // 2
+    bytes_per_row_padded = (bytes_per_row_raw + 3) & ~3
+    buf = np.frombuffer(
+        body.pixel_indices, dtype=np.uint8, count=h * bytes_per_row_padded
+    )
+    rows = buf.reshape(h, bytes_per_row_padded)
     rows = rows[::-1, :bytes_per_row_raw]
     hi = rows >> 4
     lo = rows & 0x0F
-    interleaved = np.empty((header.height, bytes_per_row_raw * 2), dtype=np.uint8)
-    interleaved[:, 0::2] = hi
-    interleaved[:, 1::2] = lo
-    indices = interleaved[:, : header.width]
-    return indices
+    interleaved = np.stack((hi, lo), axis=-1).reshape(h, bytes_per_row_raw * 2)
+    return interleaved[:, :w]
 
 
 def parse_drcs_bmp(data: bytes) -> np.ndarray:
     seek = Seek(data)
     header, body = parse(seek)
-    assert header == DrcsHeader.expected_drcs_header(), "Invalid DRCS BMP header"
+    assert header.verify(), "Invalid DRCS BMP"
     pal_rgba = build_palette_rgba(header, body)
     indices = _decode_indices(header, body)
     rgba = pal_rgba[indices]
     return rgba.astype(np.uint8)
-
-
-

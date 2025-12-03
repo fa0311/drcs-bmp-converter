@@ -1,0 +1,10 @@
+{
+  "configurations": [
+    {
+      "name": "Python デバッガー: モジュール",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "drcs_bmp_converter"
+    }
+  ]
+}
